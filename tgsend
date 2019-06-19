@@ -1,0 +1,106 @@
+#!/usr/bin/env perl
+#
+# Author: Guillermo Ramos <gramos@gramos.me> (2019)
+#
+# Run `tgsend -h` for quick help, or `tgsend -h -v` for full manual.
+#
+# Dependencies: HTTP-Message, JSON
+################################################################################
+
+use Getopt::Long;
+use Pod::Usage qw<pod2usage>;
+use LWP::UserAgent;
+use Data::Dumper;
+
+use HTTP::Request;
+use JSON qw<encode_json>;
+
+my $TOKEN;
+my $pretend;
+my $verbose = 0;
+my $help;
+
+GetOptions("TOKEN=s" => \$TOKEN,
+           "pretend" => \$pretend,
+           "verbose+" => \$verbose,
+           "help" => \$help);
+pod2usage(-verbose => $verbose+1) if $help or ! @ARGV;
+
+# If token was not specified in CLI, try to get it from ENV
+$TOKEN ||= $ENV{'TGSEND_TOKEN'};
+
+# If still no token, try to get it from ~/.config/tgsend_token
+unless ($TOKEN) {
+    my $CONFIG_HOME = $ENV{'XDG_CONFIG_HOME'} || $ENV{'HOME'} . "/.config";
+    my $CONFIG = "$CONFIG_HOME/tgsend_token";
+    open(my $cfg, "<", $CONFIG) or
+        pod2usage(-message => "ERROR: Unable to get bot token ($CONFIG: $!).\n",
+                  -verbose => 99, -sections => "AUTHENTICATION");
+    $TOKEN = <$cfg>;
+    chomp $TOKEN;
+    close $cfg;
+}
+
+# Sanity check
+$TOKEN =~ /^[0-9]+:[a-zA-Z0-9]+$/ or die "Invalid bot token ($TOKEN)";
+
+# Read text from stdin
+undef $/;
+my $TEXT = <STDIN>;
+
+my $ua = LWP::UserAgent->new;
+my $URI = "https://api.telegram.org/bot$TOKEN/sendMessage";
+sub send_message {
+    my $chat_id = shift;
+    my $content = encode_json {'chat_id' => $chat_id, 'text' => $TEXT};
+    my $req = HTTP::Request->new("POST", $URI,
+                               ["Content-Type", "application/json"], $content);
+    if ($verbose) {
+        print "Sending to $chat_id:\n====$TEXT====\n";
+        print "Request:\n", Dumper($req) if $verbose > 1;
+    }
+    unless ($pretend) {
+        my $resp = $ua->request($req);
+        print "Response:\n", Dumper($resp) if $verbose > 1;
+        if ($resp->is_error()) {
+            die $resp->message;
+        }
+    }
+}
+
+send_message($_) foreach @ARGV;
+
+
+__END__
+
+=head1 NAME
+
+tgsend - Send message to a Telegram chat using a bot token
+
+=head1 SYNOPSIS
+
+tgsend [-h | --help]
+
+tgsend [options] [chatid1 chatid2 ...]
+
+=head1 OPTIONS
+
+  --pretend | -p      Do not actually do anything
+  --verbose | -v      Show more information (including help)
+  --token | -t        Bot token (read from environment otherwise)
+  --help | -h         Show this message
+
+=head1 DESCRIPTION
+
+This program sends its standard input to the Telegram chats whose IDs are passed
+as arguments, using the given bot token.
+
+=head1 AUTHENTICATION
+
+To get the bot token, this program will check (in order):
+
+  - The "--token" CLI argument
+  - The "TGSEND_TOKEN" environment variable
+  - The contents of "$XDG_CONFIG_HOME/tgsend_token" (usually ~/.config/tgsend_token)
+
+=cut
