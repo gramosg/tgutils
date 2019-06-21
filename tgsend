@@ -17,6 +17,11 @@ use Data::Dumper;
 use HTTP::Request;
 use JSON qw<encode_json>;
 
+
+my $HOME = $ENV{'HOME'};
+my $CONFIG_HOME = $ENV{'XDG_CONFIG_HOME'} || "$HOME/.config";
+my $CACHE_HOME = $ENV{'XDG_CACHE_HOME'} || "$HOME/.cache";
+
 my $TOKEN;
 my $PRETEND;
 my $VERBOSE = 0;
@@ -58,12 +63,12 @@ sub send_message {
     my $req = HTTP::Request->new("POST", $URI,
                                ["Content-Type", "application/json"], $content);
     if ($VERBOSE || $PRETEND) {
-        print "Sending to $chat_id:\n====\n$TEXT\n====\n";
-        print "Request:\n", Dumper($req) if $VERBOSE > 1;
+        print STDERR "Sending to $chat_id:\n====\n$TEXT\n====\n";
+        print STDERR "Request:\n", Dumper($req), "\n" if $VERBOSE > 1;
     }
     unless ($PRETEND) {
         my $resp = $ua->request($req);
-        print "Response:\n", Dumper($resp) if $VERBOSE > 1;
+        print STDERR "Response:\n", Dumper($resp), "\n" if $VERBOSE > 1;
         if ($resp->is_error()) {
             die $resp->message;
         }
@@ -87,8 +92,8 @@ tgsend [options] [chatid1 chatid2 ...]
 
 =head1 OPTIONS
 
-  --token | -t        Bot token (see AUTHENTICATION)
   --pretend | -p      Do not actually do anything
+  --token | -t        Bot token (see AUTHENTICATION)
   --version           Show version
   --verbose | -v      Show more information (combine with -h to see full manual)
   --help | -h         Show this message
