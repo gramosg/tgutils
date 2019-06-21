@@ -1,0 +1,114 @@
+#!/usr/bin/env perl
+#
+# Author: Guillermo Ramos <gramos@gramos.me> (2019)
+#
+# Run `tgrecv -h` for quick help, or `tgrecv -h -v` for full manual.
+#
+# Dependencies: HTTP-Message, JSON
+################################################################################
+
+$main::VERSION = "0.1.0";
+
+use Getopt::Long qw(:config auto_version);
+use Pod::Usage qw<pod2usage>;
+use LWP::UserAgent;
+use Data::Dumper;
+
+use HTTP::Request;
+use JSON qw<encode_json decode_json>;
+
+my $TOKEN;
+my $OUTPUT;
+my $OFFSET;
+my $TIMEOUT = 60;
+my $VERBOSE = 0;
+my $HELP;
+
+GetOptions("token=s" => \$TOKEN,
+           "offset=i" => \$OFFSET,
+           "timeout=i" => \$TIMEOUT,
+           "output=s" => \$OUTPUT,
+           "verbose+" => \$VERBOSE,
+           "help" => \$HELP);
+pod2usage(-verbose => $VERBOSE+1) if $HELP;
+
+# If token was not specified in CLI, try to get it from ENV
+$TOKEN ||= $ENV{'TGRECV_TOKEN'};
+
+# If still no token, try to get it from ~/.config/tgrecv_token
+unless ($TOKEN) {
+    my $CONFIG_HOME = $ENV{'XDG_CONFIG_HOME'} || $ENV{'HOME'} . "/.config";
+    my $CONFIG = "$CONFIG_HOME/tgrecv_token";
+    open(my $cfg, "<", $CONFIG) or
+        pod2usage(-message => "ERROR: Unable to get bot token ($CONFIG: $!).\n",
+                  -verbose => 99, -sections => "AUTHENTICATION");
+    $TOKEN = <$cfg>;
+    chomp $TOKEN;
+    close $cfg;
+}
+
+# Sanity check
+$TOKEN =~ /^[0-9]+:[a-zA-Z0-9]+$/ or die "Invalid bot token ($TOKEN)";
+
+my $ua = LWP::UserAgent->new;
+my $uri = "https://api.telegram.org/bot$TOKEN/getUpdates?timeout=$TIMEOUT";
+$uri = $uri . "&offset=$OFFSET" if $OFFSET;
+my $req = HTTP::Request->new("GET", $uri);
+if ($VERBOSE) {
+    print "Request:\n", Dumper($req) if $VERBOSE > 1;
+}
+
+my $resp = $ua->request($req);
+print "Response:\n", Dumper($resp) if $VERBOSE > 1;
+if ($resp->is_error()) {
+    die $resp->message;
+} else {
+    my $out = STDOUT;
+    if ($OUTPUT) {
+        open($out, ">", $OUTPUT) or die "Cannot open $OUTPUT for writing: $!";
+    }
+    print $out encode_json(decode_json($resp->content)->{'result'});
+}
+
+
+
+__END__
+
+=head1 NAME
+
+tgrecv - Receive updates from Telegram, output them as JSON
+
+=head1 SYNOPSIS
+
+tgrecv [-h | --help]
+
+tgrecv [options]
+
+=head1 OPTIONS
+
+  --token | -t        Bot token (see AUTHENTICATION)
+  --offset            Offset of the first message to receive - previous ones are
+                      discarded
+  --timeout           Timeout for long polling (default: 60 seconds)
+  --output=file       Write the output to file instead of stdout
+  --version           Show version
+  --verbose | -v      Show more information (combine with -h to see full manual)
+  --help | -h         Show this message
+
+=head1 DESCRIPTION
+
+This program receives a single update batch from the Telegram bot identified by
+B<token>, and outputs it as a JSON array. The array can contain multiple
+updates. The connection is blocking (long polling), so it waits until an update
+is available before exiting.
+
+=head1 AUTHENTICATION
+
+To get the bot token, this program will check (in order):
+
+  - The "--token" CLI argument
+  - The "TGRECV_TOKEN" environment variable
+  - The contents of "$XDG_CONFIG_HOME/tgrecv_token"
+    (usually ~/.config/tgrecv_token)
+
+=cut
