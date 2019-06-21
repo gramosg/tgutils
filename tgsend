@@ -29,12 +29,12 @@ GetOptions("token=s" => \$TOKEN,
 pod2usage(-verbose => $VERBOSE+1) if $HELP or ! @ARGV;
 
 # If token was not specified in CLI, try to get it from ENV
-$TOKEN ||= $ENV{'TGSEND_TOKEN'};
+$TOKEN ||= $ENV{'TGUTILS_TOKEN'};
 
-# If still no token, try to get it from ~/.config/tgsend_token
+# If still no token, try to get it from ~/.config/tgutils_token
 unless ($TOKEN) {
     my $CONFIG_HOME = $ENV{'XDG_CONFIG_HOME'} || $ENV{'HOME'} . "/.config";
-    my $CONFIG = "$CONFIG_HOME/tgsend_token";
+    my $CONFIG = "$CONFIG_HOME/tgutils_token";
     open(my $cfg, "<", $CONFIG) or
         pod2usage(-message => "ERROR: Unable to get bot token ($CONFIG: $!).\n",
                   -verbose => 99, -sections => "AUTHENTICATION");
@@ -103,8 +103,8 @@ as arguments, using the given bot token.
 To get the bot token, this program will check (in order):
 
   - The "--token" CLI argument
-  - The "TGSEND_TOKEN" environment variable
-  - The contents of "$XDG_CONFIG_HOME/tgsend_token"
-    (usually ~/.config/tgsend_token)
+  - The "TGUTILS_TOKEN" environment variable
+  - The contents of "$XDG_CONFIG_HOME/tgutils_token"
+    (usually ~/.config/tgutils_token)
 
 =cut
