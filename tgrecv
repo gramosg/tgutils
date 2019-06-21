@@ -13,19 +13,30 @@ use Getopt::Long qw(:config auto_version);
 use Pod::Usage qw<pod2usage>;
 use LWP::UserAgent;
 use Data::Dumper;
+use Storable qw<store retrieve>;
+use File::Basename qw<dirname>;
 
 use HTTP::Request;
 use JSON qw<encode_json decode_json>;
 
+
+my $HOME = $ENV{'HOME'};
+my $CONFIG_HOME = $ENV{'XDG_CONFIG_HOME'} || "$HOME/.config";
+my $CACHE_HOME = $ENV{'XDG_CACHE_HOME'} || "$HOME/.cache";
+
+my $cache;
+
 my $TOKEN;
 my $OUTPUT;
 my $OFFSET;
+my $AUTO_OFFSET;
 my $TIMEOUT = 60;
 my $VERBOSE = 0;
 my $HELP;
 
 GetOptions("token=s" => \$TOKEN,
            "offset=i" => \$OFFSET,
+           "auto-offset" => \$AUTO_OFFSET,
            "timeout=i" => \$TIMEOUT,
            "output=s" => \$OUTPUT,
            "verbose+" => \$VERBOSE,
@@ -37,7 +48,6 @@ $TOKEN ||= $ENV{'TGUTILS_TOKEN'};
 
 # If still no token, try to get it from ~/.config/tgutils_token
 unless ($TOKEN) {
-    my $CONFIG_HOME = $ENV{'XDG_CONFIG_HOME'} || $ENV{'HOME'} . "/.config";
     my $CONFIG = "$CONFIG_HOME/tgutils_token";
     open(my $cfg, "<", $CONFIG) or
         pod2usage(-message => "ERROR: Unable to get bot token ($CONFIG: $!).\n",
@@ -50,16 +60,28 @@ unless ($TOKEN) {
 # Sanity check
 $TOKEN =~ /^[0-9]+:[a-zA-Z0-9]+$/ or die "Invalid bot token ($TOKEN)";
 
+# Fetch cache (TODO move to module)
+my $CACHE_FILE = "$CACHE_HOME/tgutils/cache";
+$cache = -f $CACHE_FILE
+    ? retrieve($CACHE_FILE)
+    : {'version' => $main::VERSION};
+print STDERR "Using cache:\n", Dumper($cache), "\n" if $VERBOSE > 1;
+
+# Get offset from cache if --auto-offset is enabled (and no --offset provided)
+if ($AUTO_OFFSET && ! $OFFSET) {
+    $OFFSET |= $cache->{'offset'};
+}
+
 my $ua = LWP::UserAgent->new;
 my $uri = "https://api.telegram.org/bot$TOKEN/getUpdates?timeout=$TIMEOUT";
 $uri = $uri . "&offset=$OFFSET" if $OFFSET;
 my $req = HTTP::Request->new("GET", $uri);
 if ($VERBOSE) {
-    print "Request:\n", Dumper($req) if $VERBOSE > 1;
+    print STDERR "Request:\n", Dumper($req), "\n" if $VERBOSE > 1;
 }
 
 my $resp = $ua->request($req);
-print "Response:\n", Dumper($resp) if $VERBOSE > 1;
+print STDERR "Response:\n", Dumper($resp), "\n" if $VERBOSE > 1;
 if ($resp->is_error()) {
     die $resp->message;
 } else {
@@ -67,7 +89,20 @@ if ($resp->is_error()) {
     if ($OUTPUT) {
         open($out, ">", $OUTPUT) or die "Cannot open $OUTPUT for writing: $!";
     }
-    print $out encode_json(decode_json($resp->content)->{'result'});
+    my $results = decode_json($resp->content)->{'result'};
+
+    # Store new offset in cache
+    if ($AUTO_OFFSET && @$results) {
+        printf STDERR "Setting new offset to %s (--auto-offset)\n",
+            $cache->{'offset'} if $VERBOSE > 1;
+        # Update cache: set offset to last update id +1
+        $cache->{'offset'} = $results->[-1]->{'update_id'}+1;
+        # Save cache (TODO move to module)
+        mkdir dirname $CACHE_FILE;
+        store($cache, $CACHE_FILE);
+    }
+
+    print $out encode_json($results);
 }
 
 
@@ -86,11 +121,14 @@ tgrecv [options]
 
 =head1 OPTIONS
 
-  --token | -t        Bot token (see AUTHENTICATION)
   --offset            Offset of the first message to receive - previous ones are
                       discarded
+  --auto-offset       Use offset cache to automatically discard previous updates
+                      (if combined with --offset, cache the last update but
+                      still use the provided offset for the current request)
   --timeout           Timeout for long polling (default: 60 seconds)
   --output=file       Write the output to file instead of stdout
+  --token | -t        Bot token (see AUTHENTICATION)
   --version           Show version
   --verbose | -v      Show more information (combine with -h to see full manual)
   --help | -h         Show this message
