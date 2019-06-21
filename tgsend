@@ -18,15 +18,15 @@ use HTTP::Request;
 use JSON qw<encode_json>;
 
 my $TOKEN;
-my $pretend;
-my $verbose = 0;
-my $help;
+my $PRETEND;
+my $VERBOSE = 0;
+my $HELP;
 
-GetOptions("TOKEN=s" => \$TOKEN,
-           "pretend" => \$pretend,
-           "verbose+" => \$verbose,
-           "help" => \$help);
-pod2usage(-verbose => $verbose+1) if $help or ! @ARGV;
+GetOptions("token=s" => \$TOKEN,
+           "pretend" => \$PRETEND,
+           "verbose+" => \$VERBOSE,
+           "help" => \$HELP);
+pod2usage(-verbose => $VERBOSE+1) if $HELP or ! @ARGV;
 
 # If token was not specified in CLI, try to get it from ENV
 $TOKEN ||= $ENV{'TGSEND_TOKEN'};
@@ -57,13 +57,13 @@ sub send_message {
     my $content = encode_json {'chat_id' => $chat_id, 'text' => $TEXT};
     my $req = HTTP::Request->new("POST", $URI,
                                ["Content-Type", "application/json"], $content);
-    if ($verbose) {
-        print "Sending to $chat_id:\n====$TEXT====\n";
-        print "Request:\n", Dumper($req) if $verbose > 1;
+    if ($VERBOSE || $PRETEND) {
+        print "Sending to $chat_id:\n====\n$TEXT\n====\n";
+        print "Request:\n", Dumper($req) if $VERBOSE > 1;
     }
-    unless ($pretend) {
+    unless ($PRETEND) {
         my $resp = $ua->request($req);
-        print "Response:\n", Dumper($resp) if $verbose > 1;
+        print "Response:\n", Dumper($resp) if $VERBOSE > 1;
         if ($resp->is_error()) {
             die $resp->message;
         }
@@ -87,10 +87,10 @@ tgsend [options] [chatid1 chatid2 ...]
 
 =head1 OPTIONS
 
-  --version           Show version
+  --token | -t        Bot token (see AUTHENTICATION)
   --pretend | -p      Do not actually do anything
-  --verbose | -v      Show more information (including help)
-  --token | -t        Bot token (read from environment otherwise)
+  --version           Show version
+  --verbose | -v      Show more information (combine with -h to see full manual)
   --help | -h         Show this message
 
 =head1 DESCRIPTION
@@ -104,6 +104,7 @@ To get the bot token, this program will check (in order):
 
   - The "--token" CLI argument
   - The "TGSEND_TOKEN" environment variable
-  - The contents of "$XDG_CONFIG_HOME/tgsend_token" (usually ~/.config/tgsend_token)
+  - The contents of "$XDG_CONFIG_HOME/tgsend_token"
+    (usually ~/.config/tgsend_token)
 
 =cut
