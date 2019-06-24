@@ -95,7 +95,7 @@ tgrecv - Receive updates from Telegram, output them as JSON
 
 =head1 SYNOPSIS
 
-tgrecv [-h | --help]
+tgrecv [-h | --help] [-v]
 
 tgrecv [options]
 

@@ -77,7 +77,7 @@ tgsend - Send message to a Telegram chat using a bot token
 
 =head1 SYNOPSIS
 
-tgsend [-h | --help]
+tgsend [-h | --help] [-v]
 
 tgsend [options] [chatid1 chatid2 ...]
 
