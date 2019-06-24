@@ -1,0 +1,95 @@
+#!/usr/bin/env perl
+#
+# Author: Guillermo Ramos <gramos@gramos.me> (2019)
+#
+# Run `tgserver -h` for quick help, or `tgserver -h -v` for full manual.
+################################################################################
+
+$main::VERSION = "0.1.0";
+
+use Getopt::Long qw(:config auto_version);
+use Pod::Usage qw<pod2usage>;
+use Data::Dumper;
+
+use JSON qw<decode_json>;
+
+use FindBin;
+use lib "$FindBin::Bin/lib";
+
+use TgLib qw<fetch_token>;
+require TgLib::Logger;
+
+my $TOKEN;
+my $VERBOSE = 0;
+my $HELP;
+
+GetOptions("token=s" => \$TOKEN,
+           "verbose+" => \$VERBOSE,
+           "help" => \$HELP);
+pod2usage(-verbose => $VERBOSE+1) if $HELP or not @ARGV;
+
+my $logger = TgLib::Logger->new($VERBOSE);
+
+# If token was not specified in CLI, get it from ENV/file
+$TOKEN ||= fetch_token() or
+    pod2usage(-message => "ERROR: Unable to get bot token ($!).\n",
+                  -verbose => 99, -sections => "AUTHENTICATION");
+
+while (1) {
+    open(my $recv, "-|", "$FindBin::Bin/tgrecv --auto-offset --timeout 100000");
+    foreach my $update (@{decode_json <$recv>}) {
+        $logger->debug(sprintf "Update %s", Dumper($update));
+        my $text = $update->{'message'}{'text'};
+        my $chatid = $update->{'message'}{'chat'}{'id'};
+        $logger->info("Received update from chat $chatid\n");
+
+        use IPC::Open2 qw<open2>;
+        my $pid = open2(my $progr, my $progw, "@ARGV");
+        print $progw $text;
+        close($progw);
+        my $response = join "", <$progr>;
+        $logger->debug("'$text' -> @ARGV -> '$response'\n");
+        close($progr);
+
+        open(my $send, "|-", "$FindBin::Bin/tgsend $chatid");
+        print $send $response;
+        close($send);
+    }
+    close($recv);
+}
+
+__END__
+
+=head1 NAME
+
+tgserver - Interact with a Telegram Bot
+
+=head1 SYNOPSIS
+
+tgserver [-h | --help] [-v]
+
+tgserver [options] -- B<prog>
+
+=head1 OPTIONS
+
+  --token | -t        Bot token (see AUTHENTICATION)
+  --version           Show version
+  --verbose | -v      Show more information (combine with -h to see full manual)
+  --help | -h         Show this message
+
+=head1 DESCRIPTION
+
+This program waits for Telegram updates from the bot specified by the token. For
+every update it runs B<prog> with stdin piped to the update, and sending stdout
+back as response.
+
+=head1 AUTHENTICATION
+
+To get the bot token, this program will check (in order):
+
+  - The "--token" CLI argument
+  - The "TGUTILS_TOKEN" environment variable
+  - The contents of "$XDG_CONFIG_HOME/tgutils_token"
+    (usually ~/.config/tgutils_token)
+
+=cut
