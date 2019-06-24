@@ -2,6 +2,7 @@ package TgLib::Cache;
 
 use Storable qw<store retrieve>;
 use File::Basename qw<dirname>;
+use File::Path qw<make_path>;
 
 use TgLib::Env qw<$CACHE_HOME>;
 
@@ -27,7 +28,7 @@ sub offset {
 
 sub save {
     my $cache = shift;
-    mkdir dirname $CACHE_FILE;
+    make_path dirname $CACHE_FILE;
     store($cache, $CACHE_FILE);
 }
 
