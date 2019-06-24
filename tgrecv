@@ -22,7 +22,8 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use TgLib qw<fetch_token>;
 use TgLib::Env qw<$HOME $CONFIG_HOME $CACHE_HOME>;
-use TgLib::Cache;
+require TgLib::Cache;
+require TgLib::Logger;
 
 my $TOKEN;
 my $OUTPUT;
@@ -41,13 +42,15 @@ GetOptions("token=s" => \$TOKEN,
            "help" => \$HELP);
 pod2usage(-verbose => $VERBOSE+1) if $HELP;
 
+my $logger = TgLib::Logger->new($VERBOSE);
+
 # If token was not specified in CLI, get it from ENV/file
 $TOKEN ||= fetch_token() or
     pod2usage(-message => "ERROR: Unable to get bot token ($!).\n",
                   -verbose => 99, -sections => "AUTHENTICATION");
 
 my $cache = TgLib::Cache->new;
-print STDERR "Using cache:\n", Dumper($cache), "\n" if $VERBOSE > 1;
+$logger->debug("Using cache: " . Dumper($cache));
 
 # Get offset from cache if --auto-offset is enabled (and no --offset provided)
 if ($AUTO_OFFSET && ! $OFFSET) {
@@ -58,12 +61,10 @@ my $ua = LWP::UserAgent->new;
 my $uri = "https://api.telegram.org/bot$TOKEN/getUpdates?timeout=$TIMEOUT";
 $uri = $uri . "&offset=$OFFSET" if $OFFSET;
 my $req = HTTP::Request->new("GET", $uri);
-if ($VERBOSE) {
-    print STDERR "Request:\n", Dumper($req), "\n" if $VERBOSE > 1;
-}
+$logger->debug("Request: " . Dumper($req));
 
 my $resp = $ua->request($req);
-print STDERR "Response:\n", Dumper($resp), "\n" if $VERBOSE > 1;
+$logger->debug("Response: " . Dumper($resp));
 if ($resp->is_error()) {
     die $resp->message;
 } else {
@@ -77,8 +78,7 @@ if ($resp->is_error()) {
     if ($AUTO_OFFSET && @$results) {
         # Update cache: set offset to last update id +1
         $cache->offset($results->[-1]{'update_id'}+1);
-        printf STDERR "Cached offset %s (--auto-offset)\n",
-            $cache->offset if $VERBOSE > 1;
+        $logger->debug(sprintf "Cached offset %s (--auto-offset)\n", $cache->offset);
         $cache->save;
     }
 

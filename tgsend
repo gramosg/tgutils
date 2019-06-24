@@ -22,6 +22,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use TgLib qw<fetch_token>;
 use TgLib::Env qw<$HOME $CONFIG_HOME $CACHE_HOME>;
+require TgLib::Logger;
 
 my $TOKEN;
 my $PRETEND;
@@ -33,6 +34,8 @@ GetOptions("token=s" => \$TOKEN,
            "verbose+" => \$VERBOSE,
            "help" => \$HELP);
 pod2usage(-verbose => $VERBOSE+1) if $HELP or ! @ARGV;
+
+my $logger = TgLib::Logger->new($VERBOSE);
 
 # If token was not specified in CLI, get it from ENV/file
 $TOKEN ||= fetch_token() or
@@ -51,8 +54,8 @@ sub send_message {
     my $req = HTTP::Request->new("POST", $URI,
                                ["Content-Type", "application/json"], $content);
     if ($VERBOSE || $PRETEND) {
-        print STDERR "Sending to $chat_id:\n====\n$TEXT\n====\n";
-        print STDERR "Request:\n", Dumper($req), "\n" if $VERBOSE > 1;
+        $logger->info("Sending to $chat_id:\n====\n$TEXT\n====\n");
+        $logger->debug(sprintf "Request:\n%s\n", Dumper($req));
     }
     unless ($PRETEND) {
         my $resp = $ua->request($req);
