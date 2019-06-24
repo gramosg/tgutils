@@ -20,6 +20,7 @@ use JSON qw<encode_json>;
 # Local modules
 use FindBin;
 use lib "$FindBin::Bin/lib";
+use TgLib qw<fetch_token>;
 use TgLib::Env qw<$HOME $CONFIG_HOME $CACHE_HOME>;
 
 my $TOKEN;
@@ -33,22 +34,10 @@ GetOptions("token=s" => \$TOKEN,
            "help" => \$HELP);
 pod2usage(-verbose => $VERBOSE+1) if $HELP or ! @ARGV;
 
-# If token was not specified in CLI, try to get it from ENV
-$TOKEN ||= $ENV{'TGUTILS_TOKEN'};
-
-# If still no token, try to get it from ~/.config/tgutils_token
-unless ($TOKEN) {
-    my $CONFIG = "$CONFIG_HOME/tgutils_token";
-    open(my $cfg, "<", $CONFIG) or
-        pod2usage(-message => "ERROR: Unable to get bot token ($CONFIG: $!).\n",
+# If token was not specified in CLI, get it from ENV/file
+$TOKEN ||= fetch_token() or
+    pod2usage(-message => "ERROR: Unable to get bot token ($!).\n",
                   -verbose => 99, -sections => "AUTHENTICATION");
-    $TOKEN = <$cfg>;
-    chomp $TOKEN;
-    close $cfg;
-}
-
-# Sanity check
-$TOKEN =~ /^[0-9]+:[a-zA-Z0-9]+$/ or die "Invalid bot token ($TOKEN)";
 
 # Read text from stdin
 undef $/;
