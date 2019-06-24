@@ -13,18 +13,15 @@ use Getopt::Long qw(:config auto_version);
 use Pod::Usage qw<pod2usage>;
 use LWP::UserAgent;
 use Data::Dumper;
-use Storable qw<store retrieve>;
-use File::Basename qw<dirname>;
 
 use HTTP::Request;
 use JSON qw<encode_json decode_json>;
 
-
-my $HOME = $ENV{'HOME'};
-my $CONFIG_HOME = $ENV{'XDG_CONFIG_HOME'} || "$HOME/.config";
-my $CACHE_HOME = $ENV{'XDG_CACHE_HOME'} || "$HOME/.cache";
-
-my $cache;
+# Local modules
+use FindBin;
+use lib "$FindBin::Bin/lib";
+use TgLib::Env qw<$HOME $CONFIG_HOME $CACHE_HOME>;
+use TgLib::Cache;
 
 my $TOKEN;
 my $OUTPUT;
@@ -60,16 +57,12 @@ unless ($TOKEN) {
 # Sanity check
 $TOKEN =~ /^[0-9]+:[a-zA-Z0-9]+$/ or die "Invalid bot token ($TOKEN)";
 
-# Fetch cache (TODO move to module)
-my $CACHE_FILE = "$CACHE_HOME/tgutils/cache";
-$cache = -f $CACHE_FILE
-    ? retrieve($CACHE_FILE)
-    : {'version' => $main::VERSION};
+my $cache = TgLib::Cache->new;
 print STDERR "Using cache:\n", Dumper($cache), "\n" if $VERBOSE > 1;
 
 # Get offset from cache if --auto-offset is enabled (and no --offset provided)
 if ($AUTO_OFFSET && ! $OFFSET) {
-    $OFFSET |= $cache->{'offset'};
+    $OFFSET |= $cache->offset;
 }
 
 my $ua = LWP::UserAgent->new;
@@ -93,13 +86,11 @@ if ($resp->is_error()) {
 
     # Store new offset in cache
     if ($AUTO_OFFSET && @$results) {
-        printf STDERR "Setting new offset to %s (--auto-offset)\n",
-            $cache->{'offset'} if $VERBOSE > 1;
         # Update cache: set offset to last update id +1
-        $cache->{'offset'} = $results->[-1]->{'update_id'}+1;
-        # Save cache (TODO move to module)
-        mkdir dirname $CACHE_FILE;
-        store($cache, $CACHE_FILE);
+        $cache->offset($results->[-1]{'update_id'}+1);
+        printf STDERR "Cached offset %s (--auto-offset)\n",
+            $cache->offset if $VERBOSE > 1;
+        $cache->save;
     }
 
     print $out encode_json($results);

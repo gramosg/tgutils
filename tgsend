@@ -17,10 +17,10 @@ use Data::Dumper;
 use HTTP::Request;
 use JSON qw<encode_json>;
 
-
-my $HOME = $ENV{'HOME'};
-my $CONFIG_HOME = $ENV{'XDG_CONFIG_HOME'} || "$HOME/.config";
-my $CACHE_HOME = $ENV{'XDG_CACHE_HOME'} || "$HOME/.cache";
+# Local modules
+use FindBin;
+use lib "$FindBin::Bin/lib";
+use TgLib::Env qw<$HOME $CONFIG_HOME $CACHE_HOME>;
 
 my $TOKEN;
 my $PRETEND;
@@ -38,7 +38,6 @@ $TOKEN ||= $ENV{'TGUTILS_TOKEN'};
 
 # If still no token, try to get it from ~/.config/tgutils_token
 unless ($TOKEN) {
-    my $CONFIG_HOME = $ENV{'XDG_CONFIG_HOME'} || $ENV{'HOME'} . "/.config";
     my $CONFIG = "$CONFIG_HOME/tgutils_token";
     open(my $cfg, "<", $CONFIG) or
         pod2usage(-message => "ERROR: Unable to get bot token ($CONFIG: $!).\n",
