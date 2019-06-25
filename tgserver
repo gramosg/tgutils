@@ -17,8 +17,9 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 
 use TgLib qw<fetch_token>;
-require TgLib::Logger;
 require TgLib::Api;
+require TgLib::Cache;
+require TgLib::Logger;
 
 my $TOKEN;
 my $VERBOSE = 0;
@@ -36,9 +37,14 @@ $TOKEN ||= fetch_token() or
     pod2usage(-message => "ERROR: Unable to get bot token ($!).\n",
                   -verbose => 99, -sections => "AUTHENTICATION");
 
+my $cache = TgLib::Cache->new($logger);
+my $api = TgLib::Api->new($TOKEN, $logger);
 while (1) {
-    open(my $recv, "-|", "$FindBin::Bin/tgrecv --token $TOKEN --auto-offset --timeout 100000");
-    foreach my $update (@{decode_json <$recv>}) {
+    # FIXME magic timeout
+    foreach my $update (@{$api->get_updates(3600, $cache->offset)}) {
+        # Cache current offset
+        $cache->offset($update->{'update_id'}+1);
+
         $logger->debug(sprintf "Update %s", Dumper($update));
         my $text = $update->{'message'}{'text'};
         my $chat_id = $update->{'message'}{'chat'}{'id'};
@@ -60,7 +66,6 @@ while (1) {
             $logger->warn("Empty response, skipping\n");
         }
     }
-    close($recv);
 }
 
 __END__
