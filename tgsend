@@ -7,28 +7,24 @@
 # Dependencies: HTTP-Message, JSON
 ################################################################################
 
-$main::VERSION = "0.1.0";
+$main::VERSION = "0.1.1";
 
 use Getopt::Long qw(:config auto_version);
 use Pod::Usage qw<pod2usage>;
-use LWP::UserAgent;
-use Data::Dumper;
-
-use HTTP::Request;
-use JSON qw<encode_json>;
 
 # Local modules
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use TgLib qw<fetch_token>;
-use TgLib::Env qw<$HOME $CONFIG_HOME $CACHE_HOME>;
 require TgLib::Logger;
+require TgLib::Api;
 
 my $TOKEN;
 my $PRETEND;
 my $VERBOSE = 0;
 my $HELP;
 
+# Parse CLI options
 GetOptions("token=s" => \$TOKEN,
            "pretend" => \$PRETEND,
            "verbose+" => \$VERBOSE,
@@ -37,36 +33,22 @@ pod2usage(-verbose => $VERBOSE+1) if $HELP or ! @ARGV;
 
 my $logger = TgLib::Logger->new($VERBOSE);
 
-# If token was not specified in CLI, get it from ENV/file
+# Fetch token: CLI || env || file
 $TOKEN ||= fetch_token() or
     pod2usage(-message => "ERROR: Unable to get bot token ($!).\n",
                   -verbose => 99, -sections => "AUTHENTICATION");
 
 # Read text from stdin
 undef $/;
-my $TEXT = <STDIN>;
+my $text = <STDIN>;
 
-my $ua = LWP::UserAgent->new;
-my $URI = "https://api.telegram.org/bot$TOKEN/sendMessage";
-sub send_message {
-    my $chat_id = shift;
-    my $content = encode_json {'chat_id' => $chat_id, 'text' => $TEXT};
-    my $req = HTTP::Request->new("POST", $URI,
-                               ["Content-Type", "application/json"], $content);
-    if ($VERBOSE || $PRETEND) {
-        $logger->info("Sending to $chat_id:\n====\n$TEXT\n====\n");
-        $logger->debug(sprintf "Request:\n%s\n", Dumper($req));
-    }
-    unless ($PRETEND) {
-        my $resp = $ua->request($req);
-        print STDERR "Response:\n", Dumper($resp), "\n" if $VERBOSE > 1;
-        if ($resp->is_error()) {
-            die $resp->message;
-        }
-    }
+# Send message to chats (or pretend to)
+if ($PRETEND) {
+    $logger->info("(prentend) Sending to $_:\n====\n$text\n====\n") foreach @ARGV;
+} else {
+    my $api = TgLib::Api->new($TOKEN, $logger);
+    $api->send_message($_, $text) foreach @ARGV;
 }
-
-send_message($_) foreach @ARGV;
 
 
 __END__

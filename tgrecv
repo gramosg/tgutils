@@ -7,23 +7,20 @@
 # Dependencies: HTTP-Message, JSON
 ################################################################################
 
-$main::VERSION = "0.1.0";
+$main::VERSION = "0.1.1";
 
 use Getopt::Long qw(:config auto_version);
 use Pod::Usage qw<pod2usage>;
-use LWP::UserAgent;
 use Data::Dumper;
-
-use HTTP::Request;
-use JSON qw<encode_json decode_json>;
+use JSON qw<encode_json>;
 
 # Local modules
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use TgLib qw<fetch_token>;
-use TgLib::Env qw<$HOME $CONFIG_HOME $CACHE_HOME>;
 require TgLib::Cache;
 require TgLib::Logger;
+require TgLib::Api;
 
 my $TOKEN;
 my $OUTPUT;
@@ -44,7 +41,7 @@ pod2usage(-verbose => $VERBOSE+1) if $HELP;
 
 my $logger = TgLib::Logger->new($VERBOSE);
 
-# If token was not specified in CLI, get it from ENV/file
+# Fetch token: CLI || env || file
 $TOKEN ||= fetch_token() or
     pod2usage(-message => "ERROR: Unable to get bot token ($!).\n",
                   -verbose => 99, -sections => "AUTHENTICATION");
@@ -57,33 +54,22 @@ if ($AUTO_OFFSET && ! $OFFSET) {
     $OFFSET |= $cache->offset;
 }
 
-my $ua = LWP::UserAgent->new;
-my $uri = "https://api.telegram.org/bot$TOKEN/getUpdates?timeout=$TIMEOUT";
-$uri = $uri . "&offset=$OFFSET" if $OFFSET;
-my $req = HTTP::Request->new("GET", $uri);
-$logger->debug("Request: " . Dumper($req));
+my $api = TgLib::Api->new($TOKEN, $logger);
+my $updates = $api->get_updates($TIMEOUT, $OFFSET);
 
-my $resp = $ua->request($req);
-$logger->debug("Response: " . Dumper($resp));
-if ($resp->is_error()) {
-    die $resp->message;
-} else {
-    my $out = STDOUT;
-    if ($OUTPUT) {
-        open($out, ">", $OUTPUT) or die "Cannot open $OUTPUT for writing: $!";
-    }
-    my $results = decode_json($resp->content)->{'result'};
-
-    # Store new offset in cache
-    if ($AUTO_OFFSET && @$results) {
-        # Update cache: set offset to last update id +1
-        $cache->offset($results->[-1]{'update_id'}+1);
-        $logger->debug(sprintf "Cached offset %s (--auto-offset)\n", $cache->offset);
-        $cache->save;
-    }
-
-    print $out encode_json($results);
+my $out = STDOUT;
+if ($OUTPUT) {
+    open($out, ">", $OUTPUT) or die "Cannot open $OUTPUT for writing: $!";
 }
+
+# Store new offset in cache (last update id +1)
+if ($AUTO_OFFSET && @$updates) {
+    $cache->offset($updates->[-1]{'update_id'}+1);
+    $logger->debug(sprintf "Cached offset %s (--auto-offset)\n", $cache->offset);
+    $cache->save;
+}
+
+print $out encode_json($updates);
 
 
 
