@@ -59,7 +59,7 @@ update until it is confirmed to be read by using the
 call. That means that the previous example will keep receiving the same
 update over and over. `tgrecv` offers two ways of dealing with this:
 
-- When using he `--auto-offset` argument it will automatically discard every
+- When using the `--auto-offset` argument it will automatically discard every
   processed update by caching the last known offset. This is probably the
   desired behaviour if there are no more consumers connected to the Bot.
 - When using the `--offset <offset>` argument it will discard the updates
