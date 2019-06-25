@@ -18,9 +18,9 @@ use JSON qw<encode_json>;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use TgLib qw<fetch_token>;
+require TgLib::Api;
 require TgLib::Cache;
 require TgLib::Logger;
-require TgLib::Api;
 
 my $TOKEN;
 my $OUTPUT;
@@ -46,8 +46,7 @@ $TOKEN ||= fetch_token() or
     pod2usage(-message => "ERROR: Unable to get bot token ($!).\n",
                   -verbose => 99, -sections => "AUTHENTICATION");
 
-my $cache = TgLib::Cache->new;
-$logger->debug("Using cache: " . Dumper($cache));
+my $cache = TgLib::Cache->new($logger);
 
 # Get offset from cache if --auto-offset is enabled (and no --offset provided)
 if ($AUTO_OFFSET && ! $OFFSET) {
@@ -63,11 +62,7 @@ if ($OUTPUT) {
 }
 
 # Store new offset in cache (last update id +1)
-if ($AUTO_OFFSET && @$updates) {
-    $cache->offset($updates->[-1]{'update_id'}+1);
-    $logger->debug(sprintf "Cached offset %s (--auto-offset)\n", $cache->offset);
-    $cache->save;
-}
+$cache->offset($updates->[-1]{'update_id'}+1) if ($AUTO_OFFSET && @$updates);
 
 print $out encode_json($updates);
 

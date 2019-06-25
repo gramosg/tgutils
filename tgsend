@@ -16,8 +16,8 @@ use Pod::Usage qw<pod2usage>;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use TgLib qw<fetch_token>;
-require TgLib::Logger;
 require TgLib::Api;
+require TgLib::Logger;
 
 my $TOKEN;
 my $PRETEND;
