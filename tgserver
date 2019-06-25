@@ -48,7 +48,7 @@ while (1) {
         $logger->debug(sprintf "Update %s", Dumper($update));
         my $text = $update->{'message'}{'text'};
         my $chat_id = $update->{'message'}{'chat'}{'id'};
-        $logger->info("Received update from chat $chat_id\n");
+        $logger->info("Received from chat $chat_id: '$text'\n");
 
         use IPC::Open2 qw<open2>;
         my $pid = open2(my $progr, my $progw, "@ARGV");

@@ -44,7 +44,7 @@ my $text = <STDIN>;
 
 # Send message to chats (or pretend to)
 if ($PRETEND) {
-    $logger->info("(prentend) Sending to $_:\n====\n$text\n====\n") foreach @ARGV;
+    $logger->info("(prentend) Sending to $_: '$text'\n") foreach @ARGV;
 } else {
     my $api = TgLib::Api->new($TOKEN, $logger);
     $api->send_message($_, $text) foreach @ARGV;

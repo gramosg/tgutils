@@ -30,7 +30,11 @@ sub get_updates {
     if ($resp->is_error()) {
         die $resp->message;
     } else {
-        return decode_json($resp->content)->{'result'};
+        my $updates = decode_json($resp->content)->{'result'};
+        $logger->info(sprintf "Received %d updates from chats %s\n",
+                     scalar(@$updates),
+                     join(", ", map { $_->{'message'}{'chat'}{'id'} } @$updates));
+        return $updates;
     }
 }
 
@@ -42,7 +46,7 @@ sub send_message {
 
     my $req = HTTP::Request->new("POST", $uri,
                                ["Content-Type", "application/json"], $content);
-    $logger->info("Sending to $chat_id:\n====\n$text\n====\n");
+    $logger->info("Sending to $chat_id: '$text'\n");
     $logger->debug(sprintf "Request:\n%s\n", Dumper($req));
 
     my $resp = $self->{'ua'}->request($req);
