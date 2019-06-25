@@ -40,7 +40,8 @@ $TOKEN ||= fetch_token() or
 
 # Read text from stdin
 undef $/;
-my $text = <STDIN>;
+my $text = join "", <STDIN>;
+$text =~ s/^\s+|\s+$//g; # Trim input
 
 # Send message to chats (or pretend to)
 if ($PRETEND) {
