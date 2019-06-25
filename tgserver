@@ -59,7 +59,7 @@ while (1) {
 
         if ($response) {
             my $api = TgLib::Api->new($TOKEN, $logger);
-            $api->send_message($chat_id, $text, $response);
+            $api->send_message($chat_id, $response);
         } else {
             $logger->warn("Empty response, skipping\n");
         }
