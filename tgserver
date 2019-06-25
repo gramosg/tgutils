@@ -36,7 +36,7 @@ $TOKEN ||= fetch_token() or
                   -verbose => 99, -sections => "AUTHENTICATION");
 
 while (1) {
-    open(my $recv, "-|", "$FindBin::Bin/tgrecv --auto-offset --timeout 100000");
+    open(my $recv, "-|", "$FindBin::Bin/tgrecv --token $TOKEN --auto-offset --timeout 100000");
     foreach my $update (@{decode_json <$recv>}) {
         $logger->debug(sprintf "Update %s", Dumper($update));
         my $text = $update->{'message'}{'text'};
@@ -53,7 +53,7 @@ while (1) {
         close($progr);
 
         if ($response) {
-            open(my $send, "|-", "$FindBin::Bin/tgsend $chatid");
+            open(my $send, "|-", "$FindBin::Bin/tgsend --token $TOKEN $chatid");
             print $send $response;
             close($send);
         } else {
