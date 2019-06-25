@@ -86,7 +86,7 @@ alphabetically.
 
 To get the Bot token, each program will check (in order):
 
-- The "--token" CLI argument
-- The "TGUTILS_TOKEN" environment variable
-- The contents of "$XDG_CONFIG_HOME/tgutils_token"
-  (usually ~/.config/tgutils_token)
+- The `--token` CLI argument
+- The `TGUTILS_TOKEN` environment variable
+- The contents of `$XDG_CONFIG_HOME/tgutils_token`
+  (usually `~/.config/tgutils_token`)
