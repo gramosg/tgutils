@@ -11,8 +11,6 @@ use Getopt::Long qw(:config auto_version);
 use Pod::Usage qw<pod2usage>;
 use Data::Dumper;
 
-use JSON qw<decode_json>;
-
 use FindBin;
 use lib "$FindBin::Bin/lib";
 
@@ -35,7 +33,7 @@ my $logger = TgLib::Logger->new($VERBOSE);
 # If token was not specified in CLI, get it from ENV/file
 $TOKEN ||= fetch_token() or
     pod2usage(-message => "ERROR: Unable to get bot token ($!).\n",
-                  -verbose => 99, -sections => "AUTHENTICATION");
+              -verbose => 99, -sections => "AUTHENTICATION");
 
 my $cache = TgLib::Cache->new($logger);
 my $api = TgLib::Api->new($TOKEN, $logger);

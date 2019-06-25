@@ -36,7 +36,7 @@ my $logger = TgLib::Logger->new($VERBOSE);
 # Fetch token: CLI || env || file
 $TOKEN ||= fetch_token() or
     pod2usage(-message => "ERROR: Unable to get bot token ($!).\n",
-                  -verbose => 99, -sections => "AUTHENTICATION");
+              -verbose => 99, -sections => "AUTHENTICATION");
 
 # Read text from stdin
 undef $/;
