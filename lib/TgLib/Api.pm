@@ -31,6 +31,8 @@ sub get_updates {
         die $resp->message;
     } else {
         my $updates = decode_json($resp->content)->{'result'};
+        # TODO why does `decode_json` not do this work?
+        map { utf8::encode($_->{'message'}{'text'}) } @$updates;
         $logger->info(sprintf "Received %d updates from chats %s\n",
                      scalar(@$updates),
                      join(", ", map { $_->{'message'}{'chat'}{'id'} } @$updates));
