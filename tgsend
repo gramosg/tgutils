@@ -40,7 +40,7 @@ $TOKEN ||= fetch_token() or
 
 # Read text from stdin
 undef $/;
-binmode STDIN, ':encoding(utf8)';
+binmode STDIN, ':encoding(UTF-8)';
 my $text = <STDIN>;
 $text =~ s/^\s+|\s+$//g; # Trim input
 
