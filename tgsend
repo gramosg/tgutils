@@ -67,11 +67,11 @@ tgsend [options] [chatid1 chatid2 ...]
 
 =head1 OPTIONS
 
-  --pretend | -p      Do not actually do anything
-  --token | -t        Bot token (see AUTHENTICATION)
-  --version           Show version
-  --verbose | -v      Show more information (combine with -h to see full manual)
-  --help | -h         Show this message
+  --pretend | -p          Do not actually do anything
+  (--token | -t) <token>  Bot token (see AUTHENTICATION)
+  --version               Show version
+  --verbose | -v          Show more information (combine with -h to see full manual)
+  --help | -h             Show this message
 
 =head1 DESCRIPTION
 

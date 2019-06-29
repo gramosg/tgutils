@@ -82,17 +82,17 @@ tgrecv [options]
 
 =head1 OPTIONS
 
-  --offset            Offset of the first message to receive - previous ones are
-                      discarded
-  --auto-offset       Use offset cache to automatically discard previous updates
-                      (if combined with --offset, cache the last update but
-                      still use the provided offset for the current request)
-  --timeout           Timeout for long polling (default: 60 seconds)
-  --output=file       Write the output to file instead of stdout
-  --token | -t        Bot token (see AUTHENTICATION)
-  --version           Show version
-  --verbose | -v      Show more information (combine with -h to see full manual)
-  --help | -h         Show this message
+  --offset                Offset of the first message to receive - previous ones are
+                          discarded
+  --auto-offset           Use offset cache to automatically discard previous updates
+                          (if combined with --offset, cache the last update but
+                          still use the provided offset for the current request)
+  --timeout               Timeout for long polling (default: 60 seconds)
+  --output=file           Write the output to file instead of stdout
+  (--token | -t) <token>  Bot token (see AUTHENTICATION)
+  --version               Show version
+  --verbose | -v          Show more information (combine with -h to see full manual)
+  --help | -h             Show this message
 
 =head1 DESCRIPTION
 

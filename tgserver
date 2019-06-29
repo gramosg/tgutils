@@ -80,10 +80,10 @@ tgserver [options] -- B<prog>
 
 =head1 OPTIONS
 
-  --token | -t        Bot token (see AUTHENTICATION)
-  --version           Show version
-  --verbose | -v      Show more information (combine with -h to see full manual)
-  --help | -h         Show this message
+  (--token | -t) <token>  Bot token (see AUTHENTICATION)
+  --version               Show version
+  --verbose | -v          Show more information (combine with -h to see full manual)
+  --help | -h             Show this message
 
 =head1 DESCRIPTION
 
