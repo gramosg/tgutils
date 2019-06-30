@@ -13,7 +13,7 @@ sub fetch_token {
         chomp $token;
         close $cfg;
     }
-    $token =~ /^[0-9]+:[a-zA-Z0-9_-]+$/ or die "Invalid bot token ($token)";
+    $token =~ /^[0-9]{9}:[a-zA-Z0-9_-]{35}$/ or die "Invalid bot token ($token)";
     return $token;
 }
 
