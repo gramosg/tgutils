@@ -96,6 +96,11 @@ Show this message
 This program will send its standard input to the given Telegram I<chat_ids>, from
 the bot identified by I<token>.
 
+=head1 EXAMPLE
+
+    echo "Hello, word!"
+      | tgsend --token 123456789:abcdefghijklmnopqrstuvwxyzABCDEFGHI 12121212 \
+
 =head1 AUTHENTICATION
 
 To get the bot token, this program will check (in order):

@@ -107,6 +107,11 @@ This program waits for Telegram updates from the bot identified by I<token>. For
 every update it runs I<prog> with stdin piped to the update, and sending stdout
 back as response.
 
+=head1 EXAMPLE
+
+    tgserver --token 123456789:abcdefghijklmnopqrstuvwxyzABCDEFGHI -- \
+      cowsay -f moofasa
+
 =head1 AUTHENTICATION
 
 To get the bot token, this program will check (in order):

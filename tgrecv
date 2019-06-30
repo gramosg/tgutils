@@ -126,6 +126,11 @@ I<token>, and outputs it as a JSON array. The array can contain multiple
 updates. The connection is blocking (long polling), so it waits until an update
 is available before exiting.
 
+=head1 EXAMPLE
+
+    tgrecv --auto-offset --token 123456789:abcdefghijklmnopqrstuvwxyzABCDEFGHI \
+      | jq .[0].message
+
 =head1 AUTHENTICATION
 
 To get the bot token, this program will check (in order):
