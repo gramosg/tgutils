@@ -66,6 +66,7 @@ while (1) {
     }
 }
 
+
 __END__
 
 =head1 NAME
@@ -74,30 +75,56 @@ tgserver - Interact with a Telegram Bot
 
 =head1 SYNOPSIS
 
-tgserver [-h | --help] [-v]
+B<tgserver> [B<-h> | B<--help>] [B<-v>]
 
-tgserver [options] -- B<prog>
+B<tgserver> [I<options>] -- I<prog>
 
 =head1 OPTIONS
 
-  (--token | -t) <token>  Bot token (see AUTHENTICATION)
-  --version               Show version
-  --verbose | -v          Show more information (combine with -h to see full manual)
-  --help | -h             Show this message
+=over
+
+=item B<--token>=I<token>, B<-t> I<token>
+
+Bot token (see B<AUTHENTICATION>)
+
+=item B<--version>
+
+Show version
+
+=item B<--verbose>, B<-v>
+
+Show more information (combine with B<-h> to see full manual)
+
+=item B<--help>, B<-h>
+
+Show this message
+
+=back
 
 =head1 DESCRIPTION
 
-This program waits for Telegram updates from the bot specified by the token. For
-every update it runs B<prog> with stdin piped to the update, and sending stdout
+This program waits for Telegram updates from the bot identified by I<token>. For
+every update it runs I<prog> with stdin piped to the update, and sending stdout
 back as response.
 
 =head1 AUTHENTICATION
 
 To get the bot token, this program will check (in order):
 
-  - The "--token" CLI argument
-  - The "TGUTILS_TOKEN" environment variable
-  - The contents of "$XDG_CONFIG_HOME/tgutils_token"
-    (usually ~/.config/tgutils_token)
+=over 2
+
+=item -
+
+The B<--token> CLI argument
+
+=item -
+
+The B<TGUTILS_TOKEN> environment variable
+
+=item -
+
+The contents of I<$XDG_CONFIG_HOME>B</tgutils_token> (usually B<~/.config/tgutils_token>)
+
+=back
 
 =cut
