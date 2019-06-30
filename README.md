@@ -9,8 +9,9 @@ This software is in very early development, please be gentle :)
 
 ## Tools
 
-Here is a short overview of the included tools, for full documentation check
-their corresponding manual (e.g., `tgsend -h -v`).
+Here is a short overview of the included tools. You can generate man pages at
+doc/man1 by running `make doc`. Each tool can also display its own doc, e.g.,
+`tgsend -h` (quick reference), `tgsend -h -v` (full manual).
 
 ### tgsend
 
