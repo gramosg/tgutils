@@ -1,5 +1,8 @@
 package TgLib::Env;
 
+use strict;
+use warnings;
+
 use parent qw<Exporter>;
 our @EXPORT = qw<$HOME $CONFIG_HOME $CACHE_HOME $TOKEN>;
 

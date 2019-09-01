@@ -1,5 +1,8 @@
 package TgLib::Cache;
 
+use strict;
+use warnings;
+
 use Storable qw<store retrieve>;
 use File::Basename qw<dirname>;
 use File::Path qw<make_path>;

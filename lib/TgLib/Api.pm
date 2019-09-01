@@ -1,5 +1,8 @@
 package TgLib::Api;
 
+use strict;
+use warnings;
+
 use JSON qw<encode_json decode_json>;
 use HTTP::Request;
 use LWP::UserAgent;

@@ -7,6 +7,9 @@
 # Dependencies: HTTP-Message, JSON
 ################################################################################
 
+use strict;
+use warnings;
+
 $main::VERSION = "0.1.1";
 
 use Getopt::Long qw(:config auto_version);

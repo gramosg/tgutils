@@ -1,5 +1,8 @@
 package TgLib::Logger;
 
+use strict;
+use warnings;
+
 use parent qw<Exporter>;
 our @EXPORT = qw<new debug info warn>;
 
