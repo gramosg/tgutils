@@ -49,11 +49,12 @@ sub send_message {
     my ($self, $chat_id, $text) = @_;
     my $logger = $self->{'logger'};
     my $uri = "$self->{'uri'}/sendMessage";
-    my $content = encode_json {'chat_id' => $chat_id, 'text' => $text};
 
+    $logger->info("Sending to $chat_id: '$text'\n");
+    utf8::decode($text) unless utf8::is_utf8($text);
+    my $content = encode_json {'chat_id' => $chat_id, 'text' => $text};
     my $req = HTTP::Request->new("POST", $uri,
                                ["Content-Type", "application/json"], $content);
-    $logger->info("Sending to $chat_id: '$text'\n");
     $logger->debug(sprintf "Request:\n%s\n", Dumper($req));
 
     my $resp = $self->{'ua'}->request($req);
