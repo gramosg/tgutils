@@ -62,6 +62,9 @@ while (1) {
 
         $logger->debug(sprintf "Update %s", Dumper($update));
         my $msg = $update->{'message'};
+        $ENV{'TGUTILS_CHAT_ID'} = $msg->{'chat'}{'id'};
+        $ENV{'TGUTILS_FROM_ID'} = $msg->{'from'}{'id'};
+        $ENV{'TGUTILS_FROM_USERNAME'} = $msg->{'from'}{'username'};
         if (exists $msg->{'photo'}) {
             handle_photo($msg);
         } else {
@@ -99,11 +102,11 @@ sub handle_text {
 sub reply {
     my $chat_id = shift;
     my $response = shift;
-    my $type = ref $response eq 'HASH' ? $response->{'type'} : undef;
+    my $type = ref $response eq 'HASH' ? $response->{'type'} : 'TEXT';
     if ($type eq 'DOCUMENT') {
         my $caption = $response->{'caption'};
         $api->send_document($chat_id, decode_base64 $response->{'content'}, $caption);
-    } elsif ($response) {
+    } elsif ($type eq 'TEXT' and $response) {
         $api->send_message($chat_id, $response);
     } else {
         $logger->warn("Empty response, skipping\n");
