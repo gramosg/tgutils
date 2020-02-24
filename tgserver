@@ -5,11 +5,18 @@
 # Run `tgserver -h` for quick help, or `tgserver -h -v` for full manual.
 ################################################################################
 
+use strict;
+use warnings;
+
+use Try::Tiny;
+
 $main::VERSION = "0.1.1";
 
 use Getopt::Long qw(:config auto_version);
 use Pod::Usage qw<pod2usage>;
 use Data::Dumper;
+use MIME::Base64 qw<decode_base64>;
+use JSON qw<decode_json>;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
@@ -54,26 +61,79 @@ while (1) {
         $cache->offset($update->{'update_id'}+1);
 
         $logger->debug(sprintf "Update %s", Dumper($update));
-        my $text = $update->{'message'}{'text'};
-        my $chat_id = $update->{'message'}{'chat'}{'id'};
-        $logger->info("Received from chat $chat_id: '$text'\n");
-
-        use IPC::Open2 qw<open2>;
-        my $pid = open2(my $progr, my $progw, "@ARGV");
-        print $progw $text;
-        close($progw);
-        my $response = join "", <$progr>;
-        chomp $response;
-        $logger->debug("'$text' -> @ARGV -> '$response'\n");
-        close($progr);
-
-        if ($response) {
-            my $api = TgLib::Api->new($TOKEN, $logger);
-            $api->send_message($chat_id, $response);
+        my $msg = $update->{'message'};
+        if (exists $msg->{'photo'}) {
+            handle_photo($msg);
         } else {
-            $logger->warn("Empty response, skipping\n");
+            handle_text($msg);
         }
     }
+}
+
+sub handle_photo {
+    my $msg = shift;
+    my $photos = $msg->{'photo'};
+    my $chat_id = $msg->{'chat'}{'id'};
+    my $photo = (sort { $b->{'width'} <=> $a->{'width'} } @$photos)[0];
+    $logger->info(sprintf "Received photo %s (size=%d) from chat %s\n",
+                 $photo->{'file_id'}, $photo->{'file_size'}, $chat_id);
+
+    my $file = $api->get_file($photo->{'file_id'});
+
+    $ENV{'TGUTILS_TYPE'} = 'IMAGE';
+    my $response = pipe_send($file, @ARGV);
+    reply($chat_id, $response);
+}
+
+sub handle_text {
+    my $msg = shift;
+    my $text = $msg->{'text'};
+    my $chat_id = $msg->{'chat'}{'id'};
+    $logger->info("Received from chat $chat_id: '$text'\n");
+
+    $ENV{'TGUTILS_TYPE'} = 'TEXT';
+    my $response = pipe_send($text, @ARGV);
+    reply($chat_id, $response);
+}
+
+sub reply {
+    my $chat_id = shift;
+    my $response = shift;
+    my $type = ref $response eq 'HASH' ? $response->{'type'} : undef;
+    if ($type eq 'DOCUMENT') {
+        my $caption = $response->{'caption'};
+        $api->send_document($chat_id, decode_base64 $response->{'content'}, $caption);
+    } elsif ($response) {
+        $api->send_message($chat_id, $response);
+    } else {
+        $logger->warn("Empty response, skipping\n");
+    }
+}
+
+sub pipe_send {
+    my ($content, @cmd) = @_;
+
+    use IPC::Open2 qw<open2>;
+    my $pid = open2(my $progr, my $progw, @cmd);
+
+    print $progw $content;
+    close($progw);
+
+    # Don't read a single line
+    my $oldsep = $/;
+    $/ = undef;
+
+    binmode($progr);
+    my $response = <$progr>;
+    close($progr);
+
+    $/ = $oldsep;
+
+    waitpid $pid, 0; # collect the child process
+    chomp $response;
+    # $logger->debug("'$content' -> @ARGV -> '$response'\n");
+
+    return try { decode_json $response } catch { $response };
 }
 
 
