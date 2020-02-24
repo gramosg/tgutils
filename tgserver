@@ -65,18 +65,14 @@ sub handle_photo {
     my $photos = $msg->{'photo'};
     my $chat_id = $msg->{'chat'}{'id'};
     my $photo = (sort { $b->{'width'} <=> $a->{'width'} } @$photos)[0];
-    $logger->info(sprintf "Received photo %s (size=%d)\n", $photo->{'file_id'}, $photo->{'file_size'});
+    $logger->info(sprintf "Received photo %s (size=%d) from chat %s\n",
+                 $photo->{'file_id'}, $photo->{'file_size'}, $chat_id);
 
     my $file = $api->get_file($photo->{'file_id'});
 
     $ENV{'TGUTILS_TYPE'} = 'IMAGE';
     my $response = pipe_send($file, @ARGV);
-    my $type = ref $response eq 'HASH' ? $response->{'type'} : undef;
-    if ($type eq 'DOCUMENT') {
-        $api->send_document($chat_id, decode_base64 $response->{'content'});
-    } else {
-        $api->send_message($chat_id, $response);
-    }
+    reply($chat_id, $response);
 }
 
 sub handle_text {
@@ -87,7 +83,17 @@ sub handle_text {
 
     $ENV{'TGUTILS_TYPE'} = 'TEXT';
     my $response = pipe_send($text, @ARGV);
-    if ($response) {
+    reply($chat_id, $response);
+}
+
+sub reply {
+    my $chat_id = shift;
+    my $response = shift;
+    my $type = ref $response eq 'HASH' ? $response->{'type'} : undef;
+    if ($type eq 'DOCUMENT') {
+        my $caption = $response->{'caption'};
+        $api->send_document($chat_id, decode_base64 $response->{'content'}, $caption);
+    } elsif ($response) {
         $api->send_message($chat_id, $response);
     } else {
         $logger->warn("Empty response, skipping\n");
@@ -136,10 +142,6 @@ B<tgserver> [I<options>] -- I<prog>
 =head1 OPTIONS
 
 =over
-
-=item B<--on-image>=I<cmd>
-
-Command to launch whenever an image is received
 
 =item B<--token>=I<token>, B<-t> I<token>
 

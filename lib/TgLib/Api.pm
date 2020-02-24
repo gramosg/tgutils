@@ -64,11 +64,11 @@ sub send_message {
 }
 
 sub send_document {
-    my ($self, $chat_id, $photo) = @_;
+    my ($self, $chat_id, $photo, $caption) = @_;
     my $logger = $self->{'logger'};
     my $uri = "$self->{'uri'}/sendDocument";
     my $content = {'chat_id' => $chat_id,
-                       'caption' => 'Tenga, ayúdese',
+                       'caption' => $caption,
                        'document' => [undef, 'cosa.png', Content => $photo]};
 
     my $req = POST $uri, 'Content-Type' => "multipart/form-data", 'Content' => $content;
