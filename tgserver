@@ -116,6 +116,10 @@ sub reply {
 sub pipe_send {
     my ($content, @cmd) = @_;
 
+    $SIG{PIPE} = sub {
+        $logger->debug("SIGPIPE received (@_), ignoring\n");
+    };
+
     use IPC::Open2 qw<open2>;
     my $pid = open2(my $progr, my $progw, @cmd);
 
