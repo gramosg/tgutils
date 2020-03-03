@@ -40,7 +40,8 @@ sub get_updates {
         map { utf8::encode($_->{'message'}{'text'}) if exists $_->{'message'}{'text'} } @$updates;
         $logger->info(sprintf "Received %d updates from chats %s\n",
                      scalar(@$updates),
-                     join(", ", map { $_->{'message'}{'chat'}{'id'} } @$updates));
+                     join(", ", map { $_->{'message'}{'chat'}{'id'} } @$updates))
+            if @$updates;
         return $updates;
     }
 }
