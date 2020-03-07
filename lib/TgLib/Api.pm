@@ -38,7 +38,7 @@ sub get_updates {
         my $updates = decode_json($resp->content)->{'result'};
         # TODO why does `decode_json` not do this work?
         map { utf8::encode($_->{'message'}{'text'}) if exists $_->{'message'}{'text'} } @$updates;
-        $logger->info(sprintf "Received %d updates from chats %s\n",
+        $logger->debug(sprintf "Received %d updates from chats %s\n",
                      scalar(@$updates),
                      join(", ", map { $_->{'message'}{'chat'}{'id'} } @$updates))
             if @$updates;
@@ -51,7 +51,6 @@ sub send_message {
     my $logger = $self->{'logger'};
     my $uri = "$self->{'uri'}/sendMessage";
 
-    $logger->info("Sending to $chat_id: '$text'\n");
     utf8::decode($text) unless utf8::is_utf8($text);
     my $content = encode_json {'chat_id' => $chat_id, 'text' => $text};
     my $req = HTTP::Request->new("POST", $uri,
@@ -74,7 +73,6 @@ sub send_document {
                        'document' => [undef, 'cosa.png', Content => $photo]};
 
     my $req = POST $uri, 'Content-Type' => "multipart/form-data", 'Content' => $content;
-    $logger->info("Sending photo to $chat_id\n");
     $logger->debug(sprintf "Request:\n%s\n", Dumper($req)); # DEBUG
 
     my $resp = $self->{'ua'}->request($req);
@@ -101,7 +99,6 @@ sub get_file {
         die $resp->message;
     } else {
         my $file_path = decode_json($resp->content)->{'result'}{'file_path'};
-        $logger->info("Getting file $file_id (file_path: $file_path)...\n");
 
         my $uri = "$self->{'file_uri'}/$file_path";
         my $req = HTTP::Request->new("GET", $uri);
