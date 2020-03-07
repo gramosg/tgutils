@@ -84,8 +84,8 @@ sub handle_photo {
     my $photos = $msg->{'photo'};
     my $chat_id = $msg->{'chat'}{'id'};
     my $photo = (sort { $b->{'width'} <=> $a->{'width'} } @$photos)[0];
-    $logger->info(sprintf "Received photo %s (size=%d) from chat %s\n",
-                 $photo->{'file_id'}, $photo->{'file_size'}, $chat_id);
+    $logger->info(sprintf "%s: [Received photo %s (size=%d)]\n",
+                 $chat_id, $photo->{'file_id'}, $photo->{'file_size'});
 
     my $file = $api->get_file($photo->{'file_id'});
 
@@ -98,7 +98,7 @@ sub handle_text {
     my $msg = shift;
     my $text = $msg->{'text'};
     my $chat_id = $msg->{'chat'}{'id'};
-    $logger->info("Received from chat $chat_id: '$text'\n");
+    $logger->info("$chat_id: '$text'\n");
 
     $ENV{'TGUTILS_TYPE'} = 'TEXT';
     my $response = pipe_send($text, @ARGV);
@@ -115,7 +115,7 @@ sub reply {
     } elsif ($type eq 'TEXT' and $response) {
         $api->send_message($chat_id, $response);
     } else {
-        $logger->warn("Empty response, skipping\n");
+        $logger->debug("Empty response, skipping\n");
     }
 }
 
