@@ -61,14 +61,20 @@ while (1) {
         $cache->offset($update->{'update_id'}+1);
 
         $logger->debug(sprintf "Update %s", Dumper($update));
-        my $msg = $update->{'message'};
-        $ENV{'TGUTILS_CHAT_ID'} = $msg->{'chat'}{'id'};
-        $ENV{'TGUTILS_FROM_ID'} = $msg->{'from'}{'id'};
-        $ENV{'TGUTILS_FROM_USERNAME'} = $msg->{'from'}{'username'};
-        if (exists $msg->{'photo'}) {
-            handle_photo($msg);
-        } else {
-            handle_text($msg);
+        if ($update->{'message'}) {
+            my $msg = $update->{'message'};
+            $ENV{'TGUTILS_CHAT_ID'} = $msg->{'chat'}{'id'};
+            $ENV{'TGUTILS_FROM_ID'} = $msg->{'from'}{'id'};
+            $ENV{'TGUTILS_FROM_USERNAME'} = $msg->{'from'}{'username'};
+            if (exists $msg->{'photo'}) {
+                handle_photo($msg);
+            } else {
+                handle_text($msg);
+            }
+        } elsif ($update->{'edited_message'}) {
+            my $msg = $update->{'edited_message'};
+            # TODO
+            $logger->info("Received edited message, ignoring...");
         }
     }
 }
