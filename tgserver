@@ -114,7 +114,13 @@ sub reply {
     if ($type eq 'DOCUMENT') {
         my $caption = $response->{'caption'};
         $logger->info("🤖: [Document '$caption'] -> $chat_id\n");
-        $api->send_document($chat_id, decode_base64 $response->{'content'}, $caption);
+        $api->send_document($chat_id, decode_base64 $response->{'content'},
+                           $response->{'filename'}, $caption);
+    } elsif ($type eq 'PHOTO') {
+        my $caption = $response->{'caption'};
+        $logger->info("🤖: [Photo '$caption'] -> $chat_id\n");
+        $api->send_photo($chat_id, decode_base64 $response->{'content'},
+                        $response->{'filename'}, $caption);
     } elsif ($type eq 'TEXT' and $response) {
         $logger->info("🤖: '$response' -> $chat_id\n");
         $api->send_message($chat_id, $response);

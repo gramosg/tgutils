@@ -62,12 +62,31 @@ sub send_message {
 }
 
 sub send_document {
-    my ($self, $chat_id, $photo, $caption) = @_;
+    my ($self, $chat_id, $file, $filename, $caption) = @_;
     my $logger = $self->{'logger'};
     my $uri = "$self->{'uri'}/sendDocument";
     my $content = {'chat_id' => $chat_id,
-                       'caption' => $caption,
-                       'document' => [undef, 'cosa.png', Content => $photo]};
+                   'caption' => $caption,
+                   'document' => [undef, $filename, Content => $file]};
+
+    my $req = POST $uri, 'Content-Type' => "multipart/form-data", 'Content' => $content;
+    $logger->debug(sprintf "Request:\n%s\n", Dumper($req)); # DEBUG
+
+    my $resp = $self->{'ua'}->request($req);
+    $logger->debug(sprintf "Response:\n%s\n", Dumper($resp));
+    if ($resp->is_error()) {
+        print decode_json($resp->content)->{'description'};
+        die $resp->message;
+    }
+}
+
+sub send_photo {
+    my ($self, $chat_id, $photo, $filename, $caption) = @_;
+    my $logger = $self->{'logger'};
+    my $uri = "$self->{'uri'}/sendPhoto";
+    my $content = {'chat_id' => $chat_id,
+                   'caption' => $caption,
+                   'photo' => [undef, $filename, Content => $photo]};
 
     my $req = POST $uri, 'Content-Type' => "multipart/form-data", 'Content' => $content;
     $logger->debug(sprintf "Request:\n%s\n", Dumper($req)); # DEBUG
