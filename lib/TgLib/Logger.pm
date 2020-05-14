@@ -1,5 +1,6 @@
 package TgLib::Logger;
 
+use POSIX qw(strftime);
 use strict;
 use warnings;
 
@@ -10,7 +11,8 @@ my %level = (warn => 0, info => 1, debug => 2);
 
 sub log_level {
     my ($self, $msg, $level) = @_;
-    print STDERR "[$level] $msg" if $level{$level} <= $self->{'level'};
+    my $date = strftime "%F %X", localtime;
+    print STDERR "[$level ] $date: $msg" if $level{$level} <= $self->{'level'};
 }
 
 ################################################################################
