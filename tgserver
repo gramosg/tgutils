@@ -2,6 +2,8 @@
 #
 # Author: Guillermo Ramos <gramos@gramos.me> (2019)
 #
+# Dependencies: Try-Tiny, HTTP-Message, libwww-perl
+#
 # Run `tgserver -h` for quick help, or `tgserver -h -v` for full manual.
 ################################################################################
 
